@@ -1,0 +1,26 @@
+body{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: #fff;
+}
+.container{
+    width: 380px;
+}
+
+#progress .times,
+.card-footer,
+.volume-container{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.volume-container i{
+    margin-right: 10px;
+}
+/* Çalan şarkının arkaplan ve yazı rengini değiştirir */
+li.playing{
+    background-color: #0b5eb7;
+    color: #fff;
+}

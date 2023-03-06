@@ -1,0 +1,168 @@
+const container = document.querySelector(".container");
+const image = document.querySelector("#music-image");
+const title = document.querySelector("#music-details .title");
+const singer = document.querySelector("#music-details .singer");
+const play = document.querySelector("#controls #play");
+const next = document.querySelector("#controls #next");
+const prev = document.querySelector("#controls #prev");
+const duration = document.querySelector("#duration");
+const currentTime = document.querySelector("#current-time");
+const progressBar = document.querySelector("#progress-bar");
+const volume = document.querySelector("#volume");
+const volumeBar = document.querySelector("#volume-bar");
+const ul = document.querySelector("ul");
+const player = new MusicPlayer(musicList);
+
+//! sayfayı yüklenirken yapılacaklar
+window.addEventListener("load", ()=>{
+    let music = player.getMusic();
+    displayMusic(music);
+    displayMusicList(player.musicList);
+    isPlaying();
+})
+
+function displayMusic(music){
+    title.innerText = music.getName();
+    singer.innerText = music.singer;
+    image.src = "img/" + music.img;
+    audio.src= "mp3/" + music.file;
+}
+
+prev.addEventListener("click", ()=>{
+    prevMusic();
+});
+next.addEventListener("click", ()=>{
+    nextMusic();
+});
+function prevMusic(){
+    player.prev();
+    let music = player.getMusic();
+    displayMusic(music);
+    playMusic();
+    isPlaying();
+};
+function nextMusic(){
+    player.next();
+    let music = player.getMusic();
+    displayMusic(music);
+    playMusic();
+    isPlaying();
+};
+
+play.addEventListener("click", ()=>{
+    const isMusicPlay = container.classList.contains("playing");
+    isMusicPlay ? pauseMusic() : playMusic();
+})
+
+function pauseMusic(){
+    container.classList.remove("playing");
+    play.querySelector("i").classList = "fa-solid fa-play";
+    audio.pause();
+}
+function playMusic(){
+    container.classList.add("playing");
+    play.querySelector("i").classList = "fa-solid fa-pause";
+    audio.play();
+}
+
+const calculateTime = (toplamSaniye) =>{
+    const dakika = Math.floor(toplamSaniye / 60);
+    const saniye = Math.floor(toplamSaniye % 60);
+    const guncellenenSaniye= saniye < 10 ? `0${saniye}`:`${saniye}`;
+    const sonuc = `${dakika}:${guncellenenSaniye}`;
+    return sonuc;
+}
+
+audio.addEventListener("loadedmetadata", ()=>{
+    duration.textContent=calculateTime(audio.duration);
+    progressBar.max=Math.floor(audio.duration);
+});
+
+audio.addEventListener("timeupdate", () =>{
+    progressBar.value=Math.floor(audio.currentTime);
+    currentTime.textContent=calculateTime(progressBar.value);
+});
+//! şarkıyı bar ile ileri sarma geri sarma veya istediğimiz yere getirmek için
+progressBar.addEventListener("input",() => {
+    currentTime.textContent=calculateTime(progressBar.value);
+    audio.currentTime = progressBar.value;
+});
+
+//! ses azaltma veya çoğaltma barını kontrol eden metod
+volumeBar.addEventListener("click",(e) => {
+    const value = e.target.value;
+    audio.volume = value / 100;
+    if(value == 0){
+        audio.muted = true;
+        sesDurumu = "sessiz";
+        volume.classList = "fa-solid fa-volume-xmark";
+    }
+    else{
+        audio.muted = false;
+        sesDurumu = "sesli";
+        volume.classList = "fa-solid fa-volume-high";
+    }
+}); 
+
+
+//! Ses açıkmı veya kapalı diye kontrol eden  ve sesi açıp kapatmamızı sağlayan metod
+let sesDurumu = "sesli";
+volume.addEventListener("click", () => {
+    if(sesDurumu==="sesli"){
+        audio.muted = true;
+        sesDurumu = "sessiz";
+        volume.classList = "fa-solid fa-volume-xmark";
+        volumeBar.value = 0;
+    }
+    else{
+        audio.muted = false;
+        sesDurumu = "sesli";
+        volume.classList = "fa-solid fa-volume-high";
+        volumeBar.value = 100;
+    }
+});
+
+//! Müzik listesinin dinamik olarak görünmesini sağlayan fonksiyon/metod
+const displayMusicList = (list) => {
+    for(let i=0; i < list.length; i++){
+        let liTag = `
+            <li li-index='${i}' onclick="selectedMusic(this)" class="list-group-item d-flex justify-content-between align-items-center">
+                <span>${list[i].getName()}</span>
+                <span id="music-${i}" class="badge bg-primary rounded-pill"></span>
+                <audio class="music-${i}" src="mp3/${list[i].file}">
+            </li>
+        `;
+
+        ul.insertAdjacentHTML("beforeend", liTag);
+        let liAudioDuration = ul.querySelector(`#music-${i}`);
+        let liAudioTag = ul.querySelector(`.music-${i}`);
+        //? index numarasına göre şarkının süresini listeye yazar.
+        liAudioTag.addEventListener("loadeddata", () => {
+           liAudioDuration.innerText = calculateTime(liAudioTag.duration);
+        });
+    }
+};
+//! listeden seçilen müziğin indexini seçer ve açar.
+const selectedMusic = (li) => {
+    player.index = li.getAttribute("li-index");
+    displayMusic(player.getMusic());
+    playMusic();
+    isPlaying();
+};
+
+//! Çalan şarkının arkaplan rengini mavi yapar
+const isPlaying = () => {
+    for(let li of ul.querySelectorAll("li")){
+        if(li.classList.contains("playing")){
+            li.classList.remove("playing");
+        }
+
+        if(li.getAttribute("li-index")==player.index){
+            li.classList.add("playing");
+        }
+    }
+};
+//! Çalan şarkı bitince otomatik olarak sonraki şarkıya geçer.
+audio.addEventListener("ended", () => {
+    nextMusic();
+})
